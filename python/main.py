@@ -37,11 +37,18 @@ def add_item(name: str = Form(...),category: str = Form(...)):
     with open('items.json','w',encoding='utf-8') as f:
         item_new={"name": name, "category": category}
         items_json["items"].append(item_new)
-        json.dump(items_json,f)
+        json.dump(items_json,f,indent=2)
         
 
     logger.info(f"Receive item: {name}")
     return {"message": f"item received: {name}"}
+
+@app.get("/items")
+def get_item():
+    #jsonファイルをopen
+    with open('items.json','r',encoding='utf-8') as f:
+            items = json.load(f)
+    return items
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
