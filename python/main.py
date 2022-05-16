@@ -77,6 +77,19 @@ def get_item():
     conn.close()
     return {"items":items}
 
+@app.get("/search")
+def get_search(keyword: str ):
+    dbname = "../db/mercari.sqlite3"
+    conn = sqlite3.connect(dbname)
+    conn.row_factory = dict_factory #jsonの形
+    cur = conn.cursor()
+    sql = "select name,category from items where name like (?)" #keywordをnameに含む商品を探す
+    cur.execute(sql,(f"%{keyword}%",))
+    result = {"items" : cur.fetchall()}
+    cur.close()
+    conn.close()
+    return result  
+
 @app.get("/image/{items_image}")
 async def get_image(items_image):
     # Create image path
