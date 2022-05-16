@@ -5,6 +5,7 @@ from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import sqlite3
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -19,12 +20,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# dict_factoryの定義
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
 def add_item(name: str = Form(...),category: str = Form(...)):
+    '''
     #jsonファイルをopen
     with open('items.json','r',encoding='utf-8') as f:
         if len(f.readline())==0:
@@ -38,17 +47,35 @@ def add_item(name: str = Form(...),category: str = Form(...)):
         item_new={"name": name, "category": category}
         items_json["items"].append(item_new)
         json.dump(items_json,f,indent=2)
-        
+    '''
+    dbname = "../db/mercari.sqlite3"
+    conn = sqlite3.connect(dbname)
+    cur = conn.cursor()
+    sql="insert into items(name,category) values(?,?)"
+    cur.execute(sql,[name,category])
+    conn.commit()
+    cur.close()
+    conn.close()    
 
-    logger.info(f"Receive item: {name}")
-    return {"message": f"item received: {name}"}
+    logger.info(f"Receive item: name:{name} category:{category}")
+    return {"message": f"item received: name:{name} category:{category}"}
 
 @app.get("/items")
 def get_item():
-    #jsonファイルをopen
+    '''#jsonファイルをopen
     with open('items.json','r',encoding='utf-8') as f:
             items = json.load(f)
-    return items
+    return items'''
+    dbname = "../db/mercari.sqlite3"
+    conn = sqlite3.connect(dbname)
+    conn.row_factory = dict_factory #jsonの形
+    cur = conn.cursor()
+    sql="SELECT * FROM items"
+    cur.execute(sql)
+    items = cur.fetchall()
+    cur.close()
+    conn.close()
+    return {"items":items}
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
