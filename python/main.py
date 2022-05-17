@@ -6,11 +6,12 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import sqlite3
+import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "image"
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [ os.environ.get('FRONT_URL', 'http://localhost:3000') ]
 app.add_middleware(
     CORSMiddleware,
@@ -32,33 +33,38 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...),category: str = Form(...)):
-    '''
+def add_item(name: str = Form(...),category: str = Form(...),image: str = Form(...)):
+
+    #-----------------jsonの時------------
     #jsonファイルをopen
-    with open('items.json','r',encoding='utf-8') as f:
-        if len(f.readline())==0:
-            items_json={"items" : []}
-        #{"items": [{"name": "jacket", "category": "fashion"}, {"name": "jacket", "category": "fashion"},...]}
-        #読み込み
-        else:
-            f.seek(0)
-            items_json=json.load(f)
-    with open('items.json','w',encoding='utf-8') as f:
-        item_new={"name": name, "category": category}
-        items_json["items"].append(item_new)
-        json.dump(items_json,f,indent=2)
-    '''
+    #with open('items.json','r',encoding='utf-8') as f:
+    #    if len(f.readline())==0:
+    #        items_json={"items" : []}
+    #    #{"items": [{"name": "jacket", "category": "fashion"}, {"name": "jacket", "category": "fashion"},...]}
+    #    #読み込み
+    #    else:
+    #        f.seek(0)
+    #        items_json=json.load(f)
+    #with open('items.json','w',encoding='utf-8') as f:
+    #    item_new={"name": name, "category": category}
+    #    items_json["items"].append(item_new)
+    #    json.dump(items_json,f,indent=2)
+    # ----------------jsonの時------------
+
+    #.jpg(拡張子)を除いた部分をhash化
+    hashed_imagename = hashlib.sha256((image.split('.')[0]).encode('utf-8')).hexdigest() + '.' + image.split('.')[1]
+    
     dbname = "../db/mercari.sqlite3"
     conn = sqlite3.connect(dbname)
     cur = conn.cursor()
-    sql="insert into items(name,category) values(?,?)"
-    cur.execute(sql,[name,category])
+    sql="insert into items(name,category,images) values(?,?,?)"
+    cur.execute(sql,[name,category,hashed_imagename])
     conn.commit()
     cur.close()
     conn.close()    
 
-    logger.info(f"Receive item: name:{name} category:{category}")
-    return {"message": f"item received: name:{name} category:{category}"}
+    logger.info(f"Receive item: name:{name} category:{category} image:{image}")
+    return {"message": f"item received: name:{name} category:{category} image:{image}"}
 
 @app.get("/items")
 def get_item():
