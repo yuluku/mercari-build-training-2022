@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -33,7 +33,7 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...),category: str = Form(...),image: str = Form(...)):
+def add_item(name: str = Form(...),category: str = Form(...),image:  bytes= File(...)):
 
     #-----------------jsonの時------------
     #jsonファイルをopen
@@ -52,7 +52,8 @@ def add_item(name: str = Form(...),category: str = Form(...),image: str = Form(.
     # ----------------jsonの時------------
 
     #.jpg(拡張子)を除いた部分をhash化
-    hashed_imagename = hashlib.sha256((image.split('.')[0]).encode('utf-8')).hexdigest() + '.' + image.split('.')[1]
+    basename = os.path.basename(image) #パス文字列から拡張子を含むファイル名部分の文字列を取得
+    hashed_imagename = hashlib.sha256((basename.split('.')[0]).encode('utf-8')).hexdigest() + '.' + basename.split('.')[1]
     
     dbname = "../db/mercari.sqlite3"
     conn = sqlite3.connect(dbname)
