@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, File
+from fastapi import FastAPI, Form, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -33,7 +33,7 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...),category: str = Form(...),image:  bytes= File(...)):
+def add_item(name: str = Form(...),category: str = Form(...),image: UploadFile = File(...)):
 
     #-----------------jsonの時------------
     #jsonファイルをopen
@@ -51,14 +51,16 @@ def add_item(name: str = Form(...),category: str = Form(...),image:  bytes= File
     #    json.dump(items_json,f,indent=2)
     # ----------------jsonの時------------
 
+    
     #.jpg(拡張子)を除いた部分をhash化
-    basename = os.path.basename(image) #パス文字列から拡張子を含むファイル名部分の文字列を取得
-    hashed_imagename = hashlib.sha256((basename.split('.')[0]).encode('utf-8')).hexdigest() + '.' + basename.split('.')[1]
+    image_name = image.filename.split('.')[0]
+    image_extension = image.filename.split('.')[1]
+    hashed_imagename = hashlib.sha256(image_name.encode()).hexdigest() + '.' + image_extension
     
     dbname = "../db/mercari.sqlite3"
     conn = sqlite3.connect(dbname)
     cur = conn.cursor()
-    sql="insert into items(name,category,images) values(?,?,?)"
+    sql="insert into items(name,category,image) values(?,?,?)"
     cur.execute(sql,[name,category,hashed_imagename])
     conn.commit()
     cur.close()
