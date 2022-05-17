@@ -86,6 +86,19 @@ def get_item():
     conn.close()
     return {"items":items}
 
+@app.get("/items/{item_id}") #STEP3-7
+def get_moreinfo(item_id: int):
+    dbname = "../db/mercari.sqlite3"
+    conn = sqlite3.connect(dbname)
+    conn.row_factory = dict_factory #jsonの形
+    cur = conn.cursor()
+    sql = f"select name,category,image from items where id = {item_id}" #idが{item_id}である商品の名前、カテゴリ、写真を取得
+    cur.execute(sql)
+    result = cur.fetchone() #クエリの現在行から1行取得し、次の行へ移動
+    cur.close()
+    conn.close()
+    return result
+
 @app.get("/search")
 def get_search(keyword: str ):
     dbname = "../db/mercari.sqlite3"
