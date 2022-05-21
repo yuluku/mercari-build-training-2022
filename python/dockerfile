@@ -1,4 +1,3 @@
-FROM alpine
-
+FROM python:3.8.5-slim-buster
 # STEP4-4では以下は変更しない
 CMD ["python", "-V"]
