@@ -1,4 +1,10 @@
-FROM alpine
+FROM python:3.8.5-slim-buster
 
-# STEP4-4では以下は変更しない
-CMD ["python", "-V"]
+COPY python/main.py python/main.py
+COPY images images
+COPY db/items.db db/items.db
+COPY db/mercari.sqlite3 db/mercari.sqlite3
+COPY python/requirements.txt python/requirements.txt
+WORKDIR /python
+RUN pip3 install -r requirements.txt
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
